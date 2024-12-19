@@ -14,7 +14,6 @@ BookingCourseService(getAllBookingCourses,deleteBookingCourse)
 CourseService(upcomingCourses),
 MotorcycleService(getAvailableMotorcycles,getMotorcyclesForSale,changeForSaleStatus,changeAvailableStatus,discountMotorcycle,CalculateAveragePriceForSameBrandAndYear,byBrandAndModel)
 OwnerEventRegistrationService(all)
-OwnerService(getAllOwners ("crated by durrah and edit by hashim and Raghad"))
 PurchaseService(all)
 RentingRequestService(getAllRentingRequests,deleteRentingRequest,extendRental)
 UserEventRegistrationService(all)
