@@ -16,7 +16,7 @@ MotorcycleService(getAvailableMotorcycles,getMotorcyclesForSale,changeForSaleSta
 OwnerEventRegistrationService(all)
 PurchaseService(all)
 RentingRequestService(getAllRentingRequests,extendRental)
-UserEventRegistrationService(all)
+UserEventRegistrationService(all,sendReminders
 UserService(all)
 AdminService(addAdmin("created by ragahd and edit by Hashim(add if statment )"))
 
