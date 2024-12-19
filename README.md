@@ -15,7 +15,7 @@ CourseService(upcomingCourses),
 MotorcycleService(getAvailableMotorcycles,getMotorcyclesForSale,changeForSaleStatus,changeAvailableStatus,discountMotorcycle,CalculateAveragePriceForSameBrandAndYear,byBrandAndModel)
 OwnerEventRegistrationService(all)
 PurchaseService(all)
-RentingRequestService(getAllRentingRequests,deleteRentingRequest,extendRental)
+RentingRequestService(getAllRentingRequests,extendRental)
 UserEventRegistrationService(all)
 UserService(all)
 AdminService(addAdmin("created by ragahd and edit by Hashim(add if statment )"))
