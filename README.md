@@ -35,6 +35,7 @@ UserEventRegistrationController(all)
 
 InDTO :
 PurchaseDTO_In
+RentingRequestDTO_In
 
 OutDTO :
 BookingCourseOutDTO
