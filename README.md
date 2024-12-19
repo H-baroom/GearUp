@@ -1,0 +1,47 @@
+Model: Purchase, user, UserEventRegistration, OwnerEventRegistration, BookingCourse
+
+Repository:
+EventRepository(findAllByDate),
+MaintenanceExpertRepository(findMaintenanceExpertByName),
+MotorcycleRepository(findMotorcycleByIsAvailable,findMotorcycleByIsForSale,findMotorcycleByBrandAndYear,findMotorcycleByBrandAndModel), 
+OwnerRepository(findOwnerByMotorcyclesId), 
+PurchaseRepository, 
+UserEventRegistrationRepository,
+UserRepository
+
+Service: 
+BookingCourseService(getAllBookingCourses,deleteBookingCourse)
+CourseService(upcomingCourses),
+MotorcycleService(getAvailableMotorcycles,getMotorcyclesForSale,changeForSaleStatus,changeAvailableStatus,discountMotorcycle,CalculateAveragePriceForSameBrandAndYear,byBrandAndModel)
+OwnerEventRegistrationService(all)
+OwnerService(getAllOwners ("crated by durrah and edit by hashim and Raghad"))
+PurchaseService(all)
+RentingRequestService(getAllRentingRequests,deleteRentingRequest,extendRental)
+UserEventRegistrationService(all)
+UserService(all)
+AdminService(addAdmin("created by ragahd and edit by Hashim(add if statment )"))
+
+
+Controller :
+AdminController(approveCompany,approveExpert)
+BookingCourseController(all)
+CourseController(upcomingCourse)
+MotorcycleController(getAvailableMotorcycles,getMotorcyclesForSale,changeForSaleStatus,changeAvailableStatus,discountMotorcycle,CalculateAveragePriceForSameBrandAndYear,byBrandAndModel)
+OwnerEventRegistrationController(all)
+PurchaseController(all)
+RentingRequestController(extendRental)
+UserController(all)
+UserEventRegistrationController(all)
+
+
+InDTO :
+PurchaseDTO_In
+
+OutDTO :
+BookingCourseOutDTO
+OwnerEventRegistrationOutDTO
+PurchaseDTO
+PurchaseMotorcycleOutDTO
+PurchaseUserOutDTO
+UserEventRegistrationOutDTO
+UserOutDTO
