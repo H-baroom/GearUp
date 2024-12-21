@@ -7,11 +7,17 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-public class MaintenanceExpertDTO {
-    private String name;
-    private String email;
-    private String specialty;
-    private Boolean isApproved;
-    private String description;
+public class MaintenanceExpertDTO {private String name;
 
+    private String username;
+
+    private String email;
+
+    private String specialty;
+
+    private Boolean isApproved;
+
+    private Integer yearsOfExperience;
+
+    private String description;
 }
