@@ -24,40 +24,43 @@ public class MaintenanceRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(columnDefinition = "varchar(20) not null ")
-    @NotEmpty(message = "Empty expert name")
     private String expert_name;
+
     @Column(columnDefinition = "DATE")
     private LocalDate requestDate = LocalDate.now();  // Date when the maintenance request was created by owner
-    @Positive(message = "Price must be a positive number!")
-    @Column(columnDefinition = "DOUBLE not null")
+
+    @Column(columnDefinition = "Double")
     private Double totalPrice;
+
+    @Pattern(regexp = "^(Pending|Completed)$")
     @Column(columnDefinition = "varchar(10) default 'Pending'")
-    @Pattern(regexp = "Pending|Completed", message = "Status must be 'Pending' or 'Completed'")
-    private String status= "Pending";
-    @Column(columnDefinition = "DATE")
-    @NotNull(message = "Empty pickup Date ")
+    private String status;
+
+    @Column(columnDefinition = "DATE not null")
     private LocalDate pickupDate;
+
     @Column(columnDefinition = "int not null")
     private Integer motorcycle_id;
 
 
-    public MaintenanceRequest(String expert_name,LocalDate pickupDate,Owner owner,Integer motorcycle_id){
-        this.expert_name= expert_name;
-        this.pickupDate=pickupDate;
-        this.owner=owner;
-        this.motorcycle_id=motorcycle_id;
-    }
-
     //Relations
+
+    @ManyToOne
+
+    @JsonIgnore
+    private MaintenanceExpert expert;
 
     @ManyToOne
     @JsonIgnore
     private Owner owner;  // The owner who made the maintenance request
 
-    @ManyToOne
-    @JsonIgnore
-    private MaintenanceExpert expert;
+    public MaintenanceRequest( LocalDate pickupDate, Owner owner, Integer motorcycle_id){
+
+        this.pickupDate=pickupDate;
+        this.owner=owner;
+        this.motorcycle_id=motorcycle_id;
+    }
+
 
 
 }
