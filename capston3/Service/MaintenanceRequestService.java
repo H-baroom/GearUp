@@ -1,6 +1,5 @@
 package com.example.capston3.Service;
 
-
 import com.example.capston3.ApiResponse.ApiException;
 import com.example.capston3.DTO.MaintenanceRequestDTO;
 import com.example.capston3.DTO.MaintenanceRequestHistoryDTO;
@@ -24,15 +23,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+
 @Service
 @RequiredArgsConstructor
-public class MaintenanceRequestService {
-
-    private final MaintenanceRequestRepository maintenanceRequestRepository;
+public class MaintenanceRequestService {private final MaintenanceRequestRepository maintenanceRequestRepository;
     private final OwnerRepository ownerRepository;
     private final MotorcycleRepository motorcycleRepository;
     private final MaintenanceExpertRepository maintenanceExpertRepository;
     private final EmailService emailService;
+
 
 
     public List<MaintenanceRequestDTO> getAllMaintenanceRequest() {
@@ -63,7 +62,7 @@ public class MaintenanceRequestService {
             return new MaintenanceRequestDTO(
                     maintenanceRequest.getRequestDate(),
                     maintenanceRequest.getTotalPrice(),
-                    maintenanceRequest.getExpert_name(),
+                    maintenanceRequest.getExpert().getName(),
                     maintenanceRequest.getStatus(),
                     maintenanceRequest.getPickupDate(),
                     motorcycleDTO
@@ -72,95 +71,109 @@ public class MaintenanceRequestService {
 
     }
 
-    public void addMaintenanceRequest(MaintenanceRequestDTO_In maintenanceRequestDTO_in){
+    //Durrah
+    public void addMaintenanceRequest(Integer ownerId, Integer expertId, MaintenanceRequest maintenanceRequest){
+        MaintenanceExpert maintenanceExpert = maintenanceExpertRepository.findMaintenanceExpertById(expertId);
 
-        Motorcycle motorcycle = motorcycleRepository.findMotorcycleById(maintenanceRequestDTO_in.getMotorcycle_id());
-        if(motorcycle == null){
-            throw new ApiException("Motorcycle not found");
+        if (maintenanceExpert == null || !maintenanceExpert.getIsApproved()) {
+            throw new ApiException("Expert not found or not approved!");
         }
 
-        Owner owner = ownerRepository.findOwnerById(maintenanceRequestDTO_in.getOwner_id());
-        if(owner == null)
-            throw new ApiException("Owner not found");
+        // Find the owner
+        Owner owner = ownerRepository.findOwnerById(ownerId);
+        if (owner == null) {
+            throw new ApiException("Owner not found!");
+        }
 
-
-        if (maintenanceRequestDTO_in.getPickupDate().isBefore(LocalDate.now())) {
+        // Validate the pickup date
+        LocalDate pickupDate = maintenanceRequest.getPickupDate();
+        if (pickupDate.isBefore(LocalDate.now())) {
             throw new ApiException("Pickup date cannot be in the past!");
         }
 
-        MaintenanceExpert expert = maintenanceExpertRepository.findMaintenanceExpertByName(maintenanceRequestDTO_in.getExpert_name());
-        if (expert == null||!expert.getIsApproved()) {
-            throw new ApiException("Expert not found!");
-        }
+        // Calculate total price
+        Double totalPrice = calculateTotalPrice(maintenanceExpert, pickupDate);
 
-        Double totalPrice = calculateTotalPrice(expert, maintenanceRequestDTO_in.getPickupDate());
-
-        MaintenanceRequest maintenanceRequest = new MaintenanceRequest(maintenanceRequestDTO_in.getExpert_name(),maintenanceRequestDTO_in.getPickupDate(),owner,maintenanceRequestDTO_in.getMotorcycle_id());
-
+        // Set fields on the maintenance request
         maintenanceRequest.setStatus("Pending");
         maintenanceRequest.setTotalPrice(totalPrice);
+        maintenanceRequest.setExpert(maintenanceExpert);
+        maintenanceRequest.setOwner(owner);
 
+        // Save the maintenance request
         maintenanceRequestRepository.save(maintenanceRequest);
+
 
     }
 
-    //Raghad method to calculate total price
+
+    //method to calculate total price
     private Double calculateTotalPrice(MaintenanceExpert expert, LocalDate pickupDate) {
         // calc price based on expert daily rate and number of days
         Double numberOfDays = (double) Duration.between(LocalDate.now().atStartOfDay(), pickupDate.atStartOfDay()).toDays();
 
         // Calculate total price as the daily rate times the number of days
-        return expert.getMaintenancePricePerDay() * numberOfDays;
+        return expert.getMaintenancePrice() * numberOfDays;
     }
 
-
-    public void updateMaintenanceRequest(Integer maintenanceRequest_id, MaintenanceRequestDTO_In maintenanceRequestDTO_in){
-
-        MaintenanceRequest maintenanceRequest = maintenanceRequestRepository.findMaintenanceRequestById(maintenanceRequest_id);
-
-        if(maintenanceRequest ==null)
-            throw new ApiException("MaintenanceRequest not found!");
-
-        maintenanceRequest.setExpert_name(maintenanceRequestDTO_in.getExpert_name());
-        maintenanceRequest.setPickupDate(maintenanceRequestDTO_in.getPickupDate());
-
-
-        if (maintenanceRequestDTO_in.getOwner_id() != null) {
-            Owner owner = ownerRepository.findOwnerById(maintenanceRequestDTO_in.getOwner_id());
-            if(owner== null)
-                throw new ApiException("Owner not found !");
-
-            maintenanceRequest.setOwner(owner);
-        }
-
-        if (maintenanceRequestDTO_in.getMotorcycle_id() != null) {
-            maintenanceRequest.setMotorcycle_id(maintenanceRequestDTO_in.getMotorcycle_id());
-        }
-
-        if (maintenanceRequestDTO_in.getPickupDate() != null) {
-            MaintenanceExpert expert = maintenanceExpertRepository.findMaintenanceExpertByName(maintenanceRequestDTO_in.getExpert_name());
-            if (expert == null||!expert.getIsApproved()) {
-                throw new ApiException("Expert not found or not approved");
-            }
-
-            // calculate again the total price if the pickupdate is changed
-            Double newTotalPrice = calculateTotalPrice(expert, maintenanceRequestDTO_in.getPickupDate());
-            maintenanceRequest.setTotalPrice(newTotalPrice);
-        }
-
-        maintenanceRequestRepository.save(maintenanceRequest);
-    }
 
     //Durrah
-    public void updateMaintenanceRequestStatusToCompleted(Integer maintenanceRequest_id, String expertName) {
+    public void updateMaintenanceRequest(Integer maintenanceRequest_id, MaintenanceRequest maintenanceRequest) {
+        MaintenanceRequest existingRequest = maintenanceRequestRepository.findMaintenanceRequestById(maintenanceRequest_id);
+
+        if (existingRequest == null) {
+            throw new ApiException("MaintenanceRequest not found!");
+        }
+
+        // Update the fields of the existing request
+        if (maintenanceRequest.getExpert_name() != null) {
+            existingRequest.setExpert_name(maintenanceRequest.getExpert_name());
+        }
+
+        if (maintenanceRequest.getPickupDate() != null) {
+            existingRequest.setPickupDate(maintenanceRequest.getPickupDate());
+        }
+
+        if (maintenanceRequest.getOwner() != null) {
+            Owner owner = ownerRepository.findOwnerById(maintenanceRequest.getOwner().getId());
+            if (owner == null) {
+                throw new ApiException("Owner not found!");
+            }
+            existingRequest.setOwner(owner);
+        }
+
+        if (maintenanceRequest.getMotorcycle_id() != null) {
+            existingRequest.setMotorcycle_id(maintenanceRequest.getMotorcycle_id());
+        }
+
+        // Recalculate the total price if the expert or pickupDate was updated
+        if (maintenanceRequest.getExpert_name() != null || maintenanceRequest.getPickupDate() != null) {
+            MaintenanceExpert expert = maintenanceExpertRepository.findMaintenanceExpertByName(maintenanceRequest.getExpert_name());
+            if (expert == null || !expert.getIsApproved()) {
+                throw new ApiException("Expert not found or not approved!");
+            }
+            Double newTotalPrice = calculateTotalPrice(expert, maintenanceRequest.getPickupDate());
+            existingRequest.setTotalPrice(newTotalPrice);
+        }
+
+        // Save the updated request
+        maintenanceRequestRepository.save(existingRequest);
+    }
+
+
+
+    //Durrah
+
+    public void updateMaintenanceRequestStatusToCompleted(Integer maintenanceRequest_id, Integer expertId) {
         MaintenanceRequest maintenanceRequest = maintenanceRequestRepository.findMaintenanceRequestById(maintenanceRequest_id);
 
-        if (maintenanceRequest == null)
+        if (maintenanceRequest == null) {
             throw new ApiException("MaintenanceRequest not found!");
+        }
 
-        // Check if the current expert is the one assigned to the request
-        if (!maintenanceRequest.getExpert_name().equalsIgnoreCase(expertName)) {
-            throw new ApiException("Only the expert can mark the maintenance request as completed!");
+        // Check if the current expert ID is the one assigned to the request
+        if (maintenanceRequest.getExpert() == null || !maintenanceRequest.getExpert().getId().equals(expertId)) {
+            throw new ApiException("Only the assigned expert can mark the maintenance request as completed!");
         }
 
         // Only allow the status to be updated if the request is in 'Pending' status
@@ -172,6 +185,7 @@ public class MaintenanceRequestService {
         maintenanceRequest.setStatus("Completed");
         maintenanceRequestRepository.save(maintenanceRequest);
     }
+
 
 
     public void deleteMaintenanceRequest(Integer maintenanceRequest_id ){
@@ -188,42 +202,6 @@ public class MaintenanceRequestService {
 
         maintenanceRequestRepository.delete(maintenanceRequest);
 
-    }
-
-    //Raghad ahmad
-    public List<MaintenanceRequestHistoryDTO> getMaintenanceHistory() {
-        // Step 1: Fetch all maintenance requests
-        List<MaintenanceRequest> maintenanceRequests = maintenanceRequestRepository.findAll();
-
-        // Step 2: Map MaintenanceRequest to MaintenanceRequestDTO
-        return maintenanceRequests.stream().map(request -> {
-            // Fetch motorcycle information based on motorcycle_id
-            Motorcycle motorcycle = motorcycleRepository.findById(request.getMotorcycle_id())
-                    .orElseThrow(() -> new ApiException("Motorcycle not found for maintenance request"));
-
-            // Map motorcycle to DTO
-            MotorcycleDTO motorcycleDTO = new MotorcycleDTO(
-                    motorcycle.getBrand(),
-                    motorcycle.getModel(),
-                    motorcycle.getYear(),
-                    motorcycle.getPrice(),
-                    motorcycle.getColor(),
-                    motorcycle.getIsAvailable(),
-                    motorcycle.getIsForSale(),
-                    motorcycle.getHasOffer()
-            );
-
-            // Map maintenance request to DTO
-            MaintenanceRequestHistoryDTO dto = new MaintenanceRequestHistoryDTO();
-            dto.setRequestDate(request.getRequestDate());
-            dto.setTotalPrice(request.getTotalPrice());
-            dto.setExpertName(request.getExpert_name());
-            dto.setStatus(request.getStatus());
-            dto.setPickupDate(request.getPickupDate());
-            dto.setMotorcycleS(List.of(motorcycleDTO)); // Add the motorcycle information
-
-            return dto;
-        }).collect(Collectors.toList());
     }
 
 
@@ -257,7 +235,7 @@ public class MaintenanceRequestService {
 
 
     //Durrah
-    public void notifyOwnerOnCompletion(Integer maintenanceRequest_Id, Integer ownerId) {
+    public void notifyOwnerOnCompletion(Integer maintenanceRequest_Id) {
         MaintenanceRequest request = maintenanceRequestRepository.findMaintenanceRequestById(maintenanceRequest_Id);
 
         if (request == null) {
@@ -281,7 +259,6 @@ public class MaintenanceRequestService {
         // Send the email notification
         emailService.sendEmail(ownerEmail, subject, text);
     }
-
 
 
 
@@ -324,9 +301,57 @@ public class MaintenanceRequestService {
 
 
     //Durrah
-    public List<MaintenanceRequest> getUpcomingRequestsByExpert(String expertName, LocalDate today) {
-        return maintenanceRequestRepository.findUpcomingRequestsByExpert(expertName, today);
+    public List<MaintenanceRequest> getUpcomingRequestsByExpert(Integer expertId, LocalDate today) {
+        return maintenanceRequestRepository.findUpcomingRequestsByExpertId(expertId, today);
     }
+
+
+    public List<MaintenanceRequestHistoryDTO> getMaintenanceHistory() {
+        // Step 1: Fetch all maintenance requests
+        List<MaintenanceRequest> maintenanceRequests = maintenanceRequestRepository.findAll();
+
+        // Step 2: Map MaintenanceRequest to MaintenanceRequestDTO
+        return maintenanceRequests.stream().map(request -> {
+            // Fetch motorcycle information based on motorcycle_id
+            Motorcycle motorcycle = motorcycleRepository.findById(request.getMotorcycle_id())
+                    .orElseThrow(() -> new ApiException("Motorcycle not found for maintenance request"));
+
+            // Map motorcycle to DTO
+            MotorcycleDTO motorcycleDTO = new MotorcycleDTO(
+                    motorcycle.getBrand(),
+                    motorcycle.getModel(),
+                    motorcycle.getYear(),
+                    motorcycle.getPrice(),
+                    motorcycle.getColor(),
+                    motorcycle.getIsAvailable(),
+                    motorcycle.getIsForSale(),
+                    motorcycle.getHasOffer()
+            );
+
+            // Map maintenance request to DTO
+            MaintenanceRequestHistoryDTO dto = new MaintenanceRequestHistoryDTO();
+            dto.setRequestDate(request.getRequestDate());
+            dto.setTotalPrice(request.getTotalPrice());
+            dto.setExpertName(request.getExpert_name());
+            dto.setStatus(request.getStatus());
+            dto.setPickupDate(request.getPickupDate());
+            dto.setMotorcycleS(List.of(motorcycleDTO)); // Add the motorcycle information
+
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
