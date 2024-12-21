@@ -28,19 +28,30 @@ public class MaintenanceRequestController {
         return ResponseEntity.status(200).body(maintenanceRequestDTOS);
     }
 
-    @PostMapping("/add")
-    public ResponseEntity addMaintenanceRequest(@RequestBody @Valid MaintenanceRequestDTO_In maintenanceRequestDTO_in){
-        maintenanceRequestService.addMaintenanceRequest(maintenanceRequestDTO_in);
+    @PostMapping("/add/{ownerId}/{expertId}")
+    public ResponseEntity addMaintenanceRequest(@PathVariable Integer ownerId, @PathVariable Integer  expertId, @RequestBody @Valid MaintenanceRequest maintenanceRequest){
+        maintenanceRequestService.addMaintenanceRequest(ownerId, expertId, maintenanceRequest);
         return ResponseEntity.status(200).body(new ApiResponse("MaintenanceRequest created!"));
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity updateMaintenanceRequest(@PathVariable Integer id, @RequestBody @Valid MaintenanceRequestDTO_In maintenanceRequestDTO_in){
+    public ResponseEntity updateMaintenanceRequest(@PathVariable Integer id, @RequestBody @Valid MaintenanceRequest maintenanceRequest){
 
-        maintenanceRequestService.updateMaintenanceRequest(id, maintenanceRequestDTO_in);
+        maintenanceRequestService.updateMaintenanceRequest(id, maintenanceRequest);
         return ResponseEntity.status(200).body(new ApiResponse("MaintenanceRequest updated!"));
 
     }
+
+    @PutMapping("/mark-request-completed/{maintenanceRequestId}/{expertId}")
+    public ApiResponse completeMaintenanceRequest(
+            @PathVariable Integer maintenanceRequestId,
+            @PathVariable Integer expertId) {
+
+        maintenanceRequestService.updateMaintenanceRequestStatusToCompleted(maintenanceRequestId, expertId);
+
+        return new ApiResponse("Maintenance request marked as completed successfully!");
+    }
+
 
     @DeleteMapping("/delete/{maintenanceRequest_id}")
     public ResponseEntity deleteMaintenanceRequest(@PathVariable Integer maintenanceRequest_id){
@@ -50,15 +61,6 @@ public class MaintenanceRequestController {
 
     }
 
-    @PutMapping("/mark-request-completed/{maintenanceRequestId}/{expertName}")
-    public ApiResponse completeMaintenanceRequest(
-            @PathVariable Integer maintenanceRequestId,
-            @PathVariable String expertName) {
-
-        maintenanceRequestService.updateMaintenanceRequestStatusToCompleted(maintenanceRequestId, expertName);
-
-        return new ApiResponse("Maintenance request marked as completed successfully!");
-    }
 
     @PostMapping("/generate-invoice/{maintenanceRequest_id}")
     public ResponseEntity<Map<String, Object>> generateMaintenanceRequestInvoice(@PathVariable Integer maintenanceRequest_id ) {
@@ -70,10 +72,10 @@ public class MaintenanceRequestController {
 
 
 
-    @PostMapping("/notify-owner-completion/{maintenanceRequest_Id}/{ownerId}")
-    public ResponseEntity<String> notifyOwnerOnCompletion(@PathVariable Integer maintenanceRequest_Id, @PathVariable Integer ownerId) {
+    @PostMapping("/notify-owner-completion/{maintenanceRequest_Id}")
+    public ResponseEntity<String> notifyOwnerOnCompletion(@PathVariable Integer maintenanceRequest_Id) {
 
-        maintenanceRequestService.notifyOwnerOnCompletion(maintenanceRequest_Id, ownerId);
+        maintenanceRequestService.notifyOwnerOnCompletion(maintenanceRequest_Id);
 
         return ResponseEntity.ok("Notification sent successfully to the owner!");
     }
@@ -96,10 +98,10 @@ public class MaintenanceRequestController {
     }
 
 
-    @GetMapping("/upcoming/{expertName}")
-    public ResponseEntity<List<MaintenanceRequest>> getUpcomingRequestsByExpert(@PathVariable String expertName) {
+    @GetMapping("/upcoming/{expertId}")
+    public ResponseEntity<List<MaintenanceRequest>> getUpcomingRequestsByExpert(@PathVariable Integer expertId) {
         LocalDate today = LocalDate.now();  // Get today's date
-        List<MaintenanceRequest> requests = maintenanceRequestService.getUpcomingRequestsByExpert(expertName, today);
+        List<MaintenanceRequest> requests = maintenanceRequestService.getUpcomingRequestsByExpert(expertId, today);
 
         return ResponseEntity.ok(requests);
     }
@@ -108,5 +110,8 @@ public class MaintenanceRequestController {
     public ResponseEntity getMaintenanceHistory(){
         return ResponseEntity.status(200).body(maintenanceRequestService.getMaintenanceHistory());
     }
+
+
+
 
 }
